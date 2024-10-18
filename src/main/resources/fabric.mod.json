@@ -1,0 +1,41 @@
+{
+	"schemaVersion": 1,
+	"id": "pronouns-on-join",
+	"version": "${version}",
+	"name": "Pronouns on join",
+	"description": "Send a user's pronouns to chat when they join a server!",
+	"authors": [
+		"MysticMia"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/pronouns-on-join/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"mysticmia.pronounsonjoin.PronounsOnJoin"
+		],
+		"client": [
+			"mysticmia.pronounsonjoin.PronounsOnJoinClient"
+		]
+	},
+	"mixins": [
+		"pronouns-on-join.mixins.json",
+		{
+			"config": "pronouns-on-join.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.15.11",
+		"minecraft": ">=1.20 <1.22",
+		"java": ">=21",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"another-mod": "*"
+	}
+}
