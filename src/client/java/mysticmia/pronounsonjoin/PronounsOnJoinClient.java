@@ -60,6 +60,7 @@ public class PronounsOnJoinClient implements ClientModInitializer {
     static Formatting themeEdited = Formatting.WHITE; // for feedback when someone makes a change
     static Formatting themeError = Formatting.RED; // text for errors
 
+
     @Override
     public void onInitializeClient() {
         // This entrypoint is suitable for setting up client-specific logic, such as rendering.
@@ -67,6 +68,7 @@ public class PronounsOnJoinClient implements ClientModInitializer {
         // Register the client-side command listener for /pronouns
         ClientCommandRegistrationCallback.EVENT.register(this::registerCommands);
     }
+
 
     private void registerCommands(@NotNull CommandDispatcher<FabricClientCommandSource> dispatcher, CommandRegistryAccess registryAccess) {
         dispatcher.register(literal("pronouns")
@@ -92,6 +94,7 @@ public class PronounsOnJoinClient implements ClientModInitializer {
                 )
         );
     }
+
 
     private static Map<UUID, String> _getPlayers() {
         ClientWorld world = MinecraftClient.getInstance().world;
@@ -150,6 +153,27 @@ public class PronounsOnJoinClient implements ClientModInitializer {
         return players;
     }
 
+
+    private static UUID handlePlayerDbUuidResponse(String response) {
+        // Parse the JSON response
+        Type type = new TypeToken<Map<String, Object>>() {}.getType();
+        Map<String, Object> responseJson = new Gson().fromJson(response, type);
+        // code, message, = string; data = dict (see below), success = bool
+        //   player
+        //     meta = dict<string,int>, username, id (dashes), raw_id (no dashes), avatar, skin_texture, = string.
+        //     properties = list<dict<string,string>>, name_history = list<?>
+
+        if (!(boolean)responseJson.get("success")) {
+            LOGGER.info("fetching player UUID failed: There likely was no player with this username or uuid");
+            return null;
+        }
+        Map<String, Object> dataData = (Map<String, Object>)responseJson.get("data");
+        Map<String, Object> playerData = (Map<String, Object>)dataData.get("player");
+        return UUID.fromString((String)playerData.get("id"));
+        //return UUID.fromString(id);
+    }
+
+
     private static CompletableFuture<UUID> fetchPlayerUuid(String playerName) {
         String apiUrl = "https://playerdb.co/api/player/minecraft/" + playerName;
 
@@ -162,26 +186,10 @@ public class PronounsOnJoinClient implements ClientModInitializer {
             // Perform the asynchronous HTTP request
             return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                     .thenApply(HttpResponse::body)
-                    .thenApply(response -> {
-                        // Parse the JSON response
-                        Type type = new TypeToken<Map<String, Object>>() {}.getType();
-                        Map<String, Object> responseJson = new Gson().fromJson(response, type);
-                        // code, message, = string; data = dict (see below), success = bool
-                        //   player
-                        //     meta = dict<string,int>, username, id (dashes), raw_id (no dashes), avatar, skin_texture, = string.
-                        //     properties = list<dict<string,string>>, name_history = list<?>
-
-                        if (!(boolean)responseJson.get("success")) {
-                            LOGGER.info("Success = False, aborting");
-                            return null;
-                        }
-                        Map<String, Object> dataData = (Map<String, Object>)responseJson.get("data");
-                        Map<String, Object> playerData = (Map<String, Object>)dataData.get("player");
-                        return UUID.fromString((String)playerData.get("id"));
-                        //return UUID.fromString(id);
-                    });
+                    .thenApply(PronounsOnJoinClient::handlePlayerDbUuidResponse);
         }
     }
+
 
     private static CompletableFuture<UUID> getUuidFromPlayerListOrApi(String playerName) {
         for (Map.Entry<UUID, String> playerEntry : _getPlayers().entrySet()) {
@@ -191,6 +199,7 @@ public class PronounsOnJoinClient implements ClientModInitializer {
         }
         return fetchPlayerUuid(playerName);
     }
+
 
     private int sendPronounHelp(@NotNull CommandContext<FabricClientCommandSource> context) {
         // return feedback to chat
@@ -206,6 +215,7 @@ public class PronounsOnJoinClient implements ClientModInitializer {
         context.getSource().sendFeedback(commandResponse);
         return 1;
     }
+
 
     private int sendPronounList(@NotNull CommandContext<FabricClientCommandSource> context) {
         // fetch pronouns (and store a mapping to convert UUIDs back to readable usernames)
@@ -238,6 +248,7 @@ public class PronounsOnJoinClient implements ClientModInitializer {
         return 1;
     }
 
+
     @SuppressWarnings("SameReturnValue")
     private int listPlayersUnknownPronouns(@NotNull CommandContext<FabricClientCommandSource> context) {
         // fetch pronouns (and store a mapping to convert UUIDs back to readable usernames)
@@ -268,67 +279,89 @@ public class PronounsOnJoinClient implements ClientModInitializer {
         return 1;
     }
 
+
+    private void handleSendCheckPronounsFromUuid(
+            @NotNull CommandContext<FabricClientCommandSource> context,
+            String playerName,
+            UUID playerUUID
+    ) {
+        // error handling
+        if (handleNoPlayerFound(context, playerName, playerUUID))
+            return;
+
+        String pronouns = PronounRetriever.getPronouns(playerUUID);
+
+        // return feedback to chat
+        MutableText response = Text.literal(playerName).formatted(themeReference);
+        if (pronouns == null || pronouns.isEmpty()) {
+            response.append( Text.literal(" does not go by any pronouns yet.").formatted(themeText) );
+        } else {
+            response.append( Text.literal(" goes by: ").formatted(themeText) );
+            response.append( Text.literal(pronouns).formatted(themeReference) );
+        }
+        context.getSource().sendFeedback(response);
+    }
+
+
     private int checkPronounFromPlayer(@NotNull CommandContext<FabricClientCommandSource> context) {
         // fetch player
         EntitySelector selector = context.getArgument("player", EntitySelector.class);
         String playerName = ((EntitySelectorAccess)selector).getPlayerName();
         LOGGER.info("Player name: {}", playerName);
         getUuidFromPlayerListOrApi(playerName)
-                .thenAccept(playerUUID -> {
-                    // error handling
-                    if (handleNoPlayerFound(context, playerName, playerUUID)) return;
-
-                    String pronouns = PronounRetriever.getPronouns(playerUUID);
-
-                    // return feedback to chat
-                    MutableText response = Text.literal(playerName).formatted(themeReference);
-                    if (pronouns == null || pronouns.isEmpty()) {
-                        response.append( Text.literal(" does not go by any pronouns yet.").formatted(themeText) );
-                    } else {
-                        response.append( Text.literal(" goes by: ").formatted(themeText) );
-                        response.append( Text.literal(pronouns).formatted(themeReference) );
-                    }
-                    context.getSource().sendFeedback(response);
-                });
+                .thenAccept(playerUUID -> handleSendCheckPronounsFromUuid(
+                        context, playerName, playerUUID
+                ));
         return 1; // idk, this doesn't really do much anymore I guess.
     }
+
+
+    private void handleSendSetPronounsFromUuid(
+            @NotNull CommandContext<FabricClientCommandSource> context,
+            String playerName,
+            UUID playerUUID
+    ) {
+        // error handling
+        if (handleNoPlayerFound(context, playerName, playerUUID)) return;
+
+        // fetch previous pronouns and set new ones
+        String newPronouns = context.getArgument("pronouns", String.class);
+        String oldPronouns = PronounRetriever.getPronouns(playerUUID);
+        MutableText response = Text.literal("Changed pronouns of ").formatted(themeText);
+        response.append( Text.literal(playerName).formatted(themeReference) );
+
+        // more error handling
+        if (!PronounRetriever.setPronouns(playerUUID, newPronouns)) {
+            response = Text.literal("Error: Couldn't store user's new pronouns!").formatted(themeError);
+            context.getSource().sendFeedback(response);
+            return;
+        }
+
+        // return feedback to chat
+        if (oldPronouns != null && !oldPronouns.isEmpty()) {
+            response.append(Text.literal(" from ").formatted(themeText));
+            response.append(Text.literal(oldPronouns).formatted(themeReference));
+        }
+        response.append( Text.literal(" to ").formatted(themeText) );
+        response.append( Text.literal(newPronouns).formatted(themeEdited) );
+        response.append( Text.literal(".").formatted(themeText) );
+        context.getSource().sendFeedback(response);
+    }
+
 
     private int setPlayerPronouns(@NotNull CommandContext<FabricClientCommandSource> context) {
         // fetch player
         EntitySelector selector = context.getArgument("player", EntitySelector.class);
         String playerName = ((EntitySelectorAccess)selector).getPlayerName();
         getUuidFromPlayerListOrApi(playerName)
-                .thenAccept(playerUUID -> {
-                    // error handling
-                    if (handleNoPlayerFound(context, playerName, playerUUID)) return;
-
-                    // fetch previous pronouns and set new ones
-                    String newPronouns = context.getArgument("pronouns", String.class);
-                    String oldPronouns = PronounRetriever.getPronouns(playerUUID);
-                    MutableText response = Text.literal("Changed pronouns of ").formatted(themeText);
-                    response.append( Text.literal(playerName).formatted(themeReference) );
-
-                    // more error handling
-                    if (!PronounRetriever.setPronouns(playerUUID, newPronouns)) {
-                        response = Text.literal("Error: Couldn't store user's new pronouns!").formatted(themeError);
-                        context.getSource().sendFeedback(response);
-                        return;
-                    }
-
-                    // return feedback to chat
-                    if (oldPronouns != null && !oldPronouns.isEmpty()) {
-                        response.append(Text.literal(" from ").formatted(themeText));
-                        response.append(Text.literal(oldPronouns).formatted(themeReference));
-                    }
-                    response.append( Text.literal(" to ").formatted(themeText) );
-                    response.append( Text.literal(newPronouns).formatted(themeEdited) );
-                    response.append( Text.literal(".").formatted(themeText) );
-                    context.getSource().sendFeedback(response);
-                });
+                .thenAccept(playerUUID -> handleSendSetPronounsFromUuid(
+                        context, playerName, playerUUID
+                ));
 
         return 1; // this probably serves no real purpose since it'll always be 1 due to the api call.
     }
 
+    
     private boolean handleNoPlayerFound(@NotNull CommandContext<FabricClientCommandSource> context, String playerName, UUID playerUUID) {
         if (playerUUID == null) {
             MutableText response = Text.literal("Player `").formatted(themeError);
