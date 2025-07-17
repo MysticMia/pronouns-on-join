@@ -11,7 +11,6 @@ import net.minecraft.client.network.PlayerListEntry;
 import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,13 +36,11 @@ public interface PronounRetriever
     ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     AtomicReference<ScheduledFuture<?>> lastScheduledFuture = new AtomicReference<>(); // AI wrote this
 
-    static Formatting themeText = Formatting.YELLOW; // default text color
-    static Formatting themeReference = Formatting.GOLD; // for feedback to global variables
-    static Formatting themeEdited = Formatting.WHITE; // for feedback when someone makes a change
-    static Formatting themeError = Formatting.RED; // text for errors
-    static Formatting themeUnknownPronouns = Formatting.GRAY;
+    PronounsOnJoinConfig config = PronounsOnJoinConfig.HANDLER.instance();
 
-    static PronounsOnJoinConfig config = PronounsOnJoinConfig.HANDLER.instance();
+    static int getThemeReference() { return config.themeReference.getRGB(); } // for feedback to global variables
+    static int getThemeText() { return config.themeColor.getRGB(); } // default text color
+    static int getThemeUnknownPronouns() { return config.themeUnknownPronouns.getRGB(); }
 
     private static void handleMultipleJoinEvents() {
         Map<UUID, Text> playerPronounFetching = new HashMap<>(playersPronounFetchQueued);
@@ -60,17 +57,17 @@ public interface PronounRetriever
                         String playerName = entry.getValue().getString();
                         ArrayList<String> pronouns = getUserPronouns(pronounResponse, playerID);
 
-                        MutableText pronounMessage = Text.literal(playerName); // formatted later to make unknown players gray
+                        MutableText pronounMessage = Text.literal(playerName); // colored later to make unknown players gray
                         if (!pronouns.isEmpty()) {
-                            pronounMessage.formatted(themeReference);
+                            pronounMessage.withColor(getThemeReference());
                             String playerPronouns = String.join("/", pronouns);
                             String pronounString = playerPronouns + " (from PronounDB)";
                             setPronouns(playerID, pronounString); // store so it won't have to do the call in the future
-                            pronounMessage.append( Text.literal(" goes by: ").formatted(themeText) );
-                            pronounMessage.append( Text.literal(pronounString).formatted(themeReference) );
+                            pronounMessage.append( Text.literal(" goes by: ").withColor(getThemeText()) );
+                            pronounMessage.append( Text.literal(pronounString).withColor(getThemeReference()) );
                         } else {
-                            pronounMessage.formatted(themeUnknownPronouns);
-                            pronounMessage.append( Text.literal(" does not have any pronouns.").formatted(themeUnknownPronouns) );
+                            pronounMessage.withColor(getThemeUnknownPronouns());
+                            pronounMessage.append( Text.literal(" does not have any pronouns.").withColor(getThemeUnknownPronouns()) );
                             setPronouns(playerID, "");
                             // "" (empty string) = no pronouns. Prevents future API calls
                         }
@@ -97,12 +94,12 @@ public interface PronounRetriever
 
         if (pronounString != null) {
             if (pronounString.isEmpty()) { // act
-                response.formatted(themeUnknownPronouns);
-                response.append( Text.literal(" does not have any pronouns.").formatted(themeUnknownPronouns) );
+                response.withColor(getThemeUnknownPronouns());
+                response.append( Text.literal(" does not have any pronouns.").withColor(getThemeUnknownPronouns()) );
             } else {
-                response.formatted(themeReference);
-                response.append( Text.literal(" goes by: ").formatted(themeText) );
-                response.append( Text.literal(pronounString).formatted(themeReference) );
+                response.withColor(getThemeReference());
+                response.append( Text.literal(" goes by: ").withColor(getThemeText()) );
+                response.append( Text.literal(pronounString).withColor(getThemeReference()) );
             }
 
             MinecraftClient client = MinecraftClient.getInstance();
