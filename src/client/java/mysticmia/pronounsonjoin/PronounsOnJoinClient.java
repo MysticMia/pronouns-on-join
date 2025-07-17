@@ -1,23 +1,11 @@
 package mysticmia.pronounsonjoin;
 
-// AI wrote half of this
-// I have no clue what im doing
-//    - Mia, 2024-10-03
-// I'm procrastinating for my Haskell test, while playing minecraft, instead of
-// playing VRChat like I wanted to.
-
-// also i could use this website to find offline people's UUIDs
-// https://playerdb.co/api/player/minecraft/skulltron300
-// for example. It also works the other way around! (filling in uuid to get username)
-
-// Also I want to add colors to pronouns when people join:
-//  Gray out if people don't have pronouns (light gray, i guess; still readable)
-
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
+import mysticmia.pronounsonjoin.config.PronounsOnJoinConfig;
 import mysticmia.pronounsonjoin.mixin.client.EntitySelectorAccess;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
@@ -33,7 +21,6 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.AbstractClientPlayerEntity;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.client.network.PlayerListEntry;
 import net.minecraft.client.world.ClientWorld;
@@ -60,15 +47,18 @@ public class PronounsOnJoinClient implements ClientModInitializer {
     static Formatting themeEdited = Formatting.WHITE; // for feedback when someone makes a change
     static Formatting themeError = Formatting.RED; // text for errors
 
+    static PronounsOnJoinConfig config;
 
     @Override
     public void onInitializeClient() {
         // This entrypoint is suitable for setting up client-specific logic, such as rendering.
         LOGGER.info("{} is initializing client in version {}!", modContainer.getMetadata().getName(), modContainer.getMetadata().getVersion());
+        PronounsOnJoinConfig.HANDLER.load();
+        config = PronounsOnJoinConfig.HANDLER.instance();
+        PronounsOnJoinConfig.HANDLER.save();
         // Register the client-side command listener for /pronouns
         ClientCommandRegistrationCallback.EVENT.register(this::registerCommands);
     }
-
 
     private void registerCommands(@NotNull CommandDispatcher<FabricClientCommandSource> dispatcher, CommandRegistryAccess registryAccess) {
         dispatcher.register(literal("pronouns")

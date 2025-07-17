@@ -8,8 +8,9 @@
 		"MysticMia"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "https://modrinth.com/mod/pronouns-on-join/",
+		"sources": "https://github.com/MysticMia/pronouns-on-join/",
+		"issues": "https://github.com/MysticMia/pronouns-on-join/issues/"
 	},
 	"license": "CC0-1.0",
 	"icon": "assets/pronouns-on-join/icon.png",
@@ -20,6 +21,9 @@
 		],
 		"client": [
 			"mysticmia.pronounsonjoin.PronounsOnJoinClient"
+		],
+		"modmenu": [
+			"mysticmia.pronounsonjoin.config.ModMenuIntegration"
 		]
 	},
 	"mixins": [
@@ -33,7 +37,8 @@
 		"fabricloader": ">=0.15.11",
 		"minecraft": ">=1.20 <1.22",
 		"java": ">=21",
-		"fabric-api": "*"
+		"fabric-api": "*",
+		"yet_another_config_lib_v3": ">=3.6.6"
 	},
 	"suggests": {
 		"another-mod": "*"

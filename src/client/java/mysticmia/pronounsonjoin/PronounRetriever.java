@@ -3,6 +3,7 @@ package mysticmia.pronounsonjoin;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
+import mysticmia.pronounsonjoin.config.PronounsOnJoinConfig;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
 import net.minecraft.client.MinecraftClient;
@@ -28,7 +29,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public interface PronounRetriever
 {
     String PRONOUN_DB_URL = "https://pronoundb.org/api/v2/lookup?platform=minecraft&ids=";
-    ModContainer modContainer = FabricLoader.getInstance().getModContainer("pronouns-on-join").get();
+    ModContainer modContainer = FabricLoader.getInstance().getModContainer("pronouns-on-join").orElseThrow();
     Logger LOGGER = LoggerFactory.getLogger(modContainer.getMetadata().getName());
 
     // This array is a workaround to get static mutable variable in an interface. (cuz interface fields are always 'final')
@@ -42,6 +43,7 @@ public interface PronounRetriever
     static Formatting themeError = Formatting.RED; // text for errors
     static Formatting themeUnknownPronouns = Formatting.GRAY;
 
+    static PronounsOnJoinConfig config = PronounsOnJoinConfig.HANDLER.instance();
 
     private static void handleMultipleJoinEvents() {
         Map<UUID, Text> playerPronounFetching = new HashMap<>(playersPronounFetchQueued);
@@ -83,6 +85,10 @@ public interface PronounRetriever
     }
 
     static void onUserJoinEvent(PlayerListS2CPacket.Entry receivedEntry, PlayerListEntry currentEntry) {
+        if (!config.showJoinMessages) {
+            return;
+        }
+
         UUID playerID = currentEntry.getProfile().getId();
         MutableText response = Text.literal(currentEntry.getProfile().getName());
 
