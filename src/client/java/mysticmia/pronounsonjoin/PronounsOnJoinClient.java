@@ -18,7 +18,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.*;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 
 import net.minecraft.client.MinecraftClient;
@@ -29,6 +28,7 @@ import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.EntitySelector;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.text.MutableText;
+import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -44,10 +44,12 @@ public class PronounsOnJoinClient implements ClientModInitializer {
 
     static PronounsOnJoinConfig config;
 
-    static int getThemeText() { return config.themeColor.getRGB(); } // default text color
-    static int getThemeReference() { return config.themeReference.getRGB(); } // for feedback to global variables
-    static int getThemeEdited() { return config.themeEdited.getRGB(); } // for feedback when someone makes a change
-    static int getThemeError() { return config.themeError.getRGB(); } // text for errors
+    static Style intToStyle(int color) { return Style.EMPTY.withColor(color); }
+    static Style getThemeText() { return intToStyle(config.themeColor.getRGB()); } // default text color
+    static Style getThemeReference() { return intToStyle(config.themeReference.getRGB()); } // for feedback to global variables
+    static Style getThemeEdited() { return intToStyle(config.themeEdited.getRGB()); } // for feedback when someone makes a change
+    static Style getThemeError() { return intToStyle(config.themeError.getRGB()); } // text for errors
+
 
     @Override
     public void onInitializeClient() {
@@ -176,15 +178,15 @@ public class PronounsOnJoinClient implements ClientModInitializer {
 
     private int sendPronounHelp(@NotNull CommandContext<FabricClientCommandSource> context) {
         // return feedback to chat
-        MutableText commandResponse = Text.literal("This mod lets you see the pronouns of whoever joins your world:\n").withColor(getThemeText());
-        commandResponse.append( Text.literal(" /pronouns help").withColor(getThemeReference()) );
-        commandResponse.append( Text.literal("  - brings up this help page!\n").withColor(getThemeText()) );
-        commandResponse.append( Text.literal(" /pronouns list [\"unknown\"]").withColor(getThemeReference()) );
-        commandResponse.append( Text.literal("  - lets you see the pronouns (or lack thereof!) of everyone in the world.\n").withColor(getThemeText()) );
-        commandResponse.append( Text.literal(" /pronouns check <player>").withColor(getThemeReference()) );
-        commandResponse.append( Text.literal("  - check the pronouns of a specific player (if you don't want to clog up your entire chat with the full player list every time...\n").withColor(getThemeText()) );
-        commandResponse.append( Text.literal(" /pronouns set <player> <pronouns>").withColor(getThemeReference()) );
-        commandResponse.append( Text.literal("  - Assign pronouns to a player!").withColor(getThemeText()) );
+        MutableText commandResponse = Text.literal("This mod lets you see the pronouns of whoever joins your world:\n").setStyle(getThemeText());
+        commandResponse.append( Text.literal(" /pronouns help").setStyle(getThemeReference()) );
+        commandResponse.append( Text.literal("  - brings up this help page!\n").setStyle(getThemeText()) );
+        commandResponse.append( Text.literal(" /pronouns list [\"unknown\"]").setStyle(getThemeReference()) );
+        commandResponse.append( Text.literal("  - lets you see the pronouns (or lack thereof!) of everyone in the world.\n").setStyle(getThemeText()) );
+        commandResponse.append( Text.literal(" /pronouns check <player>").setStyle(getThemeReference()) );
+        commandResponse.append( Text.literal("  - check the pronouns of a specific player (if you don't want to clog up your entire chat with the full player list every time...\n").setStyle(getThemeText()) );
+        commandResponse.append( Text.literal(" /pronouns set <player> <pronouns>").setStyle(getThemeReference()) );
+        commandResponse.append( Text.literal("  - Assign pronouns to a player!").setStyle(getThemeText()) );
         context.getSource().sendFeedback(commandResponse);
         return 1;
     }
@@ -204,17 +206,17 @@ public class PronounsOnJoinClient implements ClientModInitializer {
 
         // error handling
         if (usersPronouns.isEmpty()) {
-            context.getSource().sendFeedback(Text.literal("Nobody in the server has pronouns set!").withColor(getThemeText()));
+            context.getSource().sendFeedback(Text.literal("Nobody in the server has pronouns set!").setStyle(getThemeText()));
             return 0;
         }
 
         // return feedback to chat
-        MutableText response = Text.literal("Online Players:").withColor(getThemeText());
+        MutableText response = Text.literal("Online Players:").setStyle(getThemeText());
         for (Map.Entry<UUID, String> entry : usersPronouns.entrySet()) { // will be Map<uuid, pronouns>
             response.append(Text.literal("\n"));
-            response.append( ((MutableText)playerUUIDmap.get(entry.getKey())).withColor(getThemeReference()) ); // key = uuid -> Text<Player>
-            response.append( Text.literal(" : ").withColor(getThemeText()) );
-            response.append( Text.literal(entry.getValue()).withColor(getThemeEdited()) ); // value = pronouns -> String
+            response.append( ((MutableText)playerUUIDmap.get(entry.getKey())).setStyle(getThemeReference()) ); // key = uuid -> Text<Player>
+            response.append( Text.literal(" : ").setStyle(getThemeText()) );
+            response.append( Text.literal(entry.getValue()).setStyle(getThemeEdited()) ); // value = pronouns -> String
         }
         LOGGER.info(response.getString());
         context.getSource().sendFeedback(response);
@@ -236,15 +238,15 @@ public class PronounsOnJoinClient implements ClientModInitializer {
         Map<UUID, String> usersPronouns = PronounRetriever.getPronounsBulk(uuids); // key = uuid, value = pronouns
 
         if (usersPronouns.size() == onlinePlayers.size()) {
-            context.getSource().sendFeedback(Text.literal("You know everyone's pronouns!").withColor(getThemeText()));
+            context.getSource().sendFeedback(Text.literal("You know everyone's pronouns!").setStyle(getThemeText()));
             return 1;
         }
 
-        MutableText response = Text.literal("Players with unknown pronouns:\n").withColor(getThemeText());
+        MutableText response = Text.literal("Players with unknown pronouns:\n").setStyle(getThemeText());
         for (Map.Entry<UUID, String> entry : onlinePlayers.entrySet()) { // key = uuid, value = username
             if (!usersPronouns.containsKey(entry.getKey())) {
-                response.append( playerUUIDmap.get(entry.getKey()).withColor(getThemeReference()) );
-                response.append( Text.literal(", ").withColor(getThemeText()) );
+                response.append( playerUUIDmap.get(entry.getKey()).setStyle(getThemeReference()) );
+                response.append( Text.literal(", ").setStyle(getThemeText()) );
             }
         }
         // return feedback to chat
@@ -265,12 +267,12 @@ public class PronounsOnJoinClient implements ClientModInitializer {
         String pronouns = PronounRetriever.getPronouns(playerUUID);
 
         // return feedback to chat
-        MutableText response = Text.literal(playerName).withColor(getThemeReference());
+        MutableText response = Text.literal(playerName).setStyle(getThemeReference());
         if (pronouns == null || pronouns.isEmpty()) {
-            response.append( Text.literal(" does not go by any pronouns yet.").withColor(getThemeText()) );
+            response.append( Text.literal(" does not go by any pronouns yet.").setStyle(getThemeText()) );
         } else {
-            response.append( Text.literal(" goes by: ").withColor(getThemeText()) );
-            response.append( Text.literal(pronouns).withColor(getThemeReference()) );
+            response.append( Text.literal(" goes by: ").setStyle(getThemeText()) );
+            response.append( Text.literal(pronouns).setStyle(getThemeReference()) );
         }
         context.getSource().sendFeedback(response);
     }
@@ -300,24 +302,24 @@ public class PronounsOnJoinClient implements ClientModInitializer {
         // fetch previous pronouns and set new ones
         String newPronouns = context.getArgument("pronouns", String.class);
         String oldPronouns = PronounRetriever.getPronouns(playerUUID);
-        MutableText response = Text.literal("Changed pronouns of ").withColor(getThemeText());
-        response.append( Text.literal(playerName).withColor(getThemeReference()) );
+        MutableText response = Text.literal("Changed pronouns of ").setStyle(getThemeText());
+        response.append( Text.literal(playerName).setStyle(getThemeReference()) );
 
         // more error handling
         if (!PronounRetriever.setPronouns(playerUUID, newPronouns)) {
-            response = Text.literal("Error: Couldn't store user's new pronouns!").withColor(getThemeError());
+            response = Text.literal("Error: Couldn't store user's new pronouns!").setStyle(getThemeError());
             context.getSource().sendFeedback(response);
             return;
         }
 
         // return feedback to chat
         if (oldPronouns != null && !oldPronouns.isEmpty()) {
-            response.append(Text.literal(" from ").withColor(getThemeText()));
-            response.append(Text.literal(oldPronouns).withColor(getThemeReference()));
+            response.append(Text.literal(" from ").setStyle(getThemeText()));
+            response.append(Text.literal(oldPronouns).setStyle(getThemeReference()));
         }
-        response.append( Text.literal(" to ").withColor(getThemeText()) );
-        response.append( Text.literal(newPronouns).withColor(getThemeEdited()) );
-        response.append( Text.literal(".").withColor(getThemeText()) );
+        response.append( Text.literal(" to ").setStyle(getThemeText()) );
+        response.append( Text.literal(newPronouns).setStyle(getThemeEdited()) );
+        response.append( Text.literal(".").setStyle(getThemeText()) );
         context.getSource().sendFeedback(response);
     }
 
@@ -337,9 +339,9 @@ public class PronounsOnJoinClient implements ClientModInitializer {
 
     private boolean handleNoPlayerFound(@NotNull CommandContext<FabricClientCommandSource> context, String playerName, UUID playerUUID) {
         if (playerUUID == null) {
-            MutableText response = Text.literal("Player `").withColor(getThemeError());
-            response.append( Text.literal(playerName).withColor(getThemeReference()) );
-            response.append( Text.literal("` not found!").withColor(getThemeError()) );
+            MutableText response = Text.literal("Player `").setStyle(getThemeError());
+            response.append( Text.literal(playerName).setStyle(getThemeReference()) );
+            response.append( Text.literal("` not found!").setStyle(getThemeError()) );
             context.getSource().sendFeedback(response);
             return true;
         }

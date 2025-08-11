@@ -10,6 +10,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.PlayerListEntry;
 import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket;
 import net.minecraft.text.MutableText;
+import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -38,9 +39,10 @@ public interface PronounRetriever
 
     PronounsOnJoinConfig config = PronounsOnJoinConfig.HANDLER.instance();
 
-    static int getThemeReference() { return config.themeReference.getRGB(); } // for feedback to global variables
-    static int getThemeText() { return config.themeColor.getRGB(); } // default text color
-    static int getThemeUnknownPronouns() { return config.themeUnknownPronouns.getRGB(); }
+    static Style intToStyle(int color) { return Style.EMPTY.withColor(color); }
+    static Style getThemeReference() { return intToStyle(config.themeReference.getRGB()); } // for feedback to global variables
+    static Style getThemeText() { return intToStyle(config.themeColor.getRGB()); } // default text color
+    static Style getThemeUnknownPronouns() { return intToStyle(config.themeUnknownPronouns.getRGB()); }
 
     private static void handleMultipleJoinEvents() {
         Map<UUID, Text> playerPronounFetching = new HashMap<>(playersPronounFetchQueued);
@@ -59,15 +61,15 @@ public interface PronounRetriever
 
                         MutableText pronounMessage = Text.literal(playerName); // colored later to make unknown players gray
                         if (!pronouns.isEmpty()) {
-                            pronounMessage.withColor(getThemeReference());
+                            pronounMessage.setStyle(getThemeReference());
                             String playerPronouns = String.join("/", pronouns);
                             String pronounString = playerPronouns + " (from PronounDB)";
                             setPronouns(playerID, pronounString); // store so it won't have to do the call in the future
-                            pronounMessage.append( Text.literal(" goes by: ").withColor(getThemeText()) );
-                            pronounMessage.append( Text.literal(pronounString).withColor(getThemeReference()) );
+                            pronounMessage.append( Text.literal(" goes by: ").setStyle(getThemeText()) );
+                            pronounMessage.append( Text.literal(pronounString).setStyle(getThemeReference()) );
                         } else {
-                            pronounMessage.withColor(getThemeUnknownPronouns());
-                            pronounMessage.append( Text.literal(" does not have any pronouns.").withColor(getThemeUnknownPronouns()) );
+                            pronounMessage.setStyle(getThemeUnknownPronouns());
+                            pronounMessage.append( Text.literal(" does not have any pronouns.").setStyle(getThemeUnknownPronouns()) );
                             setPronouns(playerID, "");
                             // "" (empty string) = no pronouns. Prevents future API calls
                         }
@@ -94,12 +96,12 @@ public interface PronounRetriever
 
         if (pronounString != null) {
             if (pronounString.isEmpty()) { // act
-                response.withColor(getThemeUnknownPronouns());
-                response.append( Text.literal(" does not have any pronouns.").withColor(getThemeUnknownPronouns()) );
+                response.setStyle(getThemeUnknownPronouns());
+                response.append( Text.literal(" does not have any pronouns.").setStyle(getThemeUnknownPronouns()) );
             } else {
-                response.withColor(getThemeReference());
-                response.append( Text.literal(" goes by: ").withColor(getThemeText()) );
-                response.append( Text.literal(pronounString).withColor(getThemeReference()) );
+                response.setStyle(getThemeReference());
+                response.append( Text.literal(" goes by: ").setStyle(getThemeText()) );
+                response.append( Text.literal(pronounString).setStyle(getThemeReference()) );
             }
 
             MinecraftClient client = MinecraftClient.getInstance();
