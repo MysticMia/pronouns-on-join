@@ -42,7 +42,7 @@ public class PronounsOnJoinClient implements ClientModInitializer {
     public static final ModContainer modContainer = FabricLoader.getInstance().getModContainer("pronouns-on-join").get();
     public static final Logger LOGGER = LoggerFactory.getLogger(modContainer.getMetadata().getName());
 
-    static PronounsOnJoinConfig config;
+    static PronounsOnJoinConfig config = PronounsOnJoinConfig.HANDLER.instance();
 
     static Style intToStyle(int color) { return Style.EMPTY.withColor(color); }
     static Style getThemeText() { return intToStyle(config.themeColor.getRGB()); } // default text color
