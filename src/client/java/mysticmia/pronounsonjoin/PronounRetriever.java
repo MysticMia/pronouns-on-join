@@ -88,8 +88,8 @@ public interface PronounRetriever
             return;
         }
 
-        UUID playerID = currentEntry.getProfile().getId();
-        MutableText response = Text.literal(currentEntry.getProfile().getName());
+        UUID playerID = currentEntry.getProfile().id();
+        MutableText response = Text.literal(currentEntry.getProfile().name());
 
         // check if player already has pronoun overrides
         String pronounString = getPronouns(playerID);

@@ -92,25 +92,25 @@ public class PronounsOnJoinClient implements ClientModInitializer {
         ClientPlayNetworkHandler handler = MinecraftClient.getInstance().getNetworkHandler();
         assert handler != null;
 
-        LOGGER.info("--b1"); // +1 gave me some answers in multiplayer
-        for (PlayerListEntry playerlistEntry : handler.getPlayerList()) {
-            LOGGER.info("{} --- {}", playerlistEntry.getProfile().getName(), playerlistEntry.getProfile().getId());
-            players.put(
-                    playerlistEntry.getProfile().getId(),
-                    playerlistEntry.getProfile().getName()
-            );
-        }
-        LOGGER.info("--b2");
-        players.clear();
-        LOGGER.info("--c1");
+////        LOGGER.info("--b1"); // +1 gave me some answers in multiplayer
+//        for (PlayerListEntry playerlistEntry : handler.getPlayerList()) {
+////            LOGGER.info("{} --- {}", playerlistEntry.getProfile().name(), playerlistEntry.getProfile().id());
+//            players.put(
+//                    playerlistEntry.getProfile().id(),
+//                    playerlistEntry.getProfile().name()
+//            );
+//        }
+////        LOGGER.info("--b2");
+//        players.clear();
+//        LOGGER.info("--c1");
         for (PlayerListEntry playerlistEntry : handler.getListedPlayerListEntries()) {
-            LOGGER.info("{} --- {}", playerlistEntry.getProfile().getName(), playerlistEntry.getProfile().getId());
+//            LOGGER.info("{} --- {}", playerlistEntry.getProfile().name(), playerlistEntry.getProfile().id());
             players.put(
-                    playerlistEntry.getProfile().getId(),
-                    playerlistEntry.getProfile().getName()
+                    playerlistEntry.getProfile().id(),
+                    playerlistEntry.getProfile().name()
             );
         }
-        LOGGER.info("--c2");
+//        LOGGER.info("--c2");
         return players;
     }
 
@@ -348,4 +348,3 @@ public class PronounsOnJoinClient implements ClientModInitializer {
         return false;
     }
 }
-
