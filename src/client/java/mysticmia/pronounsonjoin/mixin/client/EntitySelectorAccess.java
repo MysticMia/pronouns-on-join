@@ -1,6 +1,6 @@
 package mysticmia.pronounsonjoin.mixin.client;
 
-import net.minecraft.command.EntitySelector;
+import net.minecraft.commands.arguments.selector.EntitySelector;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 

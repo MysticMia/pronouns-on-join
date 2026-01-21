@@ -4,7 +4,7 @@ import dev.isxander.yacl3.config.v2.api.ConfigClassHandler;
 import dev.isxander.yacl3.config.v2.api.SerialEntry;
 import dev.isxander.yacl3.config.v2.api.serializer.GsonConfigSerializerBuilder;
 import dev.isxander.yacl3.platform.YACLPlatform;
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.Identifier;
 
 import java.awt.*;
 
@@ -32,7 +32,7 @@ public class PronounsOnJoinConfig {
     //#endregion Colors
 
     public static ConfigClassHandler<PronounsOnJoinConfig> HANDLER = ConfigClassHandler.createBuilder(PronounsOnJoinConfig.class)
-            .id(Identifier.of("mysticmia.pronounsonjoin", CONFIG_FILE_NAME))
+            .id(Identifier.fromNamespaceAndPath("mysticmia.pronounsonjoin", CONFIG_FILE_NAME))
             .serializer(config -> GsonConfigSerializerBuilder.create(config)
                     .setPath(YACLPlatform.getConfigDir().resolve(CONFIG_FILE_NAME))
                     .setJson5(true)

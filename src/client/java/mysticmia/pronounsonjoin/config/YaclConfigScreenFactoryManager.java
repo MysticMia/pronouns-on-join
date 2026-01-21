@@ -3,8 +3,8 @@ package mysticmia.pronounsonjoin.config;
 import dev.isxander.yacl3.api.*;
 import dev.isxander.yacl3.api.controller.ColorControllerBuilder;
 import dev.isxander.yacl3.api.controller.TickBoxControllerBuilder;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 
 import java.awt.*;
 
@@ -12,17 +12,17 @@ public class YaclConfigScreenFactoryManager {
 
     private static ConfigCategory getMainSettings(PronounsOnJoinConfig config) {
         return ConfigCategory.createBuilder()
-                .name(Text.literal("Main toggles"))
-                .tooltip(Text.of("A selection of the most important toggles"))
+                .name(net.minecraft.network.chat.Component.literal("Main toggles"))
+                .tooltip(net.minecraft.network.chat.Component.nullToEmpty("A selection of the most important toggles"))
                 .group(OptionGroup.createBuilder()
-                        .name(Text.literal("Todo1."))
+                        .name(net.minecraft.network.chat.Component.literal("Todo1."))
                         .description(OptionDescription.of(
-                                Text.literal("Todo2."))
+                                net.minecraft.network.chat.Component.literal("Todo2."))
                         )
                         .option(Option.<Boolean>createBuilder()
-                                .name(Text.literal("Join messages"))
+                                .name(net.minecraft.network.chat.Component.literal("Join messages"))
                                 .description(OptionDescription.of(
-                                        Text.literal("Enable to send someone's pronouns when they join the server."))
+                                        net.minecraft.network.chat.Component.literal("Enable to send someone's pronouns when they join the server."))
                                 )
                                 .binding(
                                         true,
@@ -39,17 +39,17 @@ public class YaclConfigScreenFactoryManager {
 
     private static ConfigCategory getColorSettings(PronounsOnJoinConfig config) {
         return ConfigCategory.createBuilder()
-                .name(Text.literal("Colors"))
-                .tooltip(Text.of("Todo3"))
+                .name(net.minecraft.network.chat.Component.literal("Colors"))
+                .tooltip(net.minecraft.network.chat.Component.nullToEmpty("Todo3"))
                 .group(OptionGroup.createBuilder()
-                        .name(Text.literal("Chat colors"))
+                        .name(net.minecraft.network.chat.Component.literal("Chat colors"))
                         .description(OptionDescription.of(
-                                Text.literal("Customize the chat colors :)"))
+                                net.minecraft.network.chat.Component.literal("Customize the chat colors :)"))
                         )
                         .option(Option.<Color>createBuilder()
-                                .name(Text.literal("Default text color"))
+                                .name(net.minecraft.network.chat.Component.literal("Default text color"))
                                 .description(OptionDescription.of(
-                                        Text.literal("The color of most text."))
+                                        net.minecraft.network.chat.Component.literal("The color of most text."))
                                 )
                                 .binding(
                                         new Color(16777045),
@@ -60,9 +60,9 @@ public class YaclConfigScreenFactoryManager {
                                 .build()
                         )
                         .option(Option.<Color>createBuilder()
-                                .name(Text.literal("Reference text color"))
+                                .name(net.minecraft.network.chat.Component.literal("Reference text color"))
                                 .description(OptionDescription.of(
-                                        Text.literal("The color of references to chat commands or usernames."))
+                                        net.minecraft.network.chat.Component.literal("The color of references to chat commands or usernames."))
                                 )
                                 .binding(
                                         new Color(16755200),
@@ -73,9 +73,9 @@ public class YaclConfigScreenFactoryManager {
                                 .build()
                         )
                         .option(Option.<Color>createBuilder()
-                                .name(Text.literal("Edited text color"))
+                                .name(net.minecraft.network.chat.Component.literal("Edited text color"))
                                 .description(OptionDescription.of(
-                                        Text.literal("The color of pronouns after you add or update them."))
+                                        net.minecraft.network.chat.Component.literal("The color of pronouns after you add or update them."))
                                 )
                                 .binding(
                                         new Color(16777215),
@@ -86,9 +86,9 @@ public class YaclConfigScreenFactoryManager {
                                 .build()
                         )
                         .option(Option.<Color>createBuilder()
-                                .name(Text.literal("Error text color"))
+                                .name(net.minecraft.network.chat.Component.literal("Error text color"))
                                 .description(OptionDescription.of(
-                                        Text.literal("The color of error and warning messages."))
+                                        net.minecraft.network.chat.Component.literal("The color of error and warning messages."))
                                 )
                                 .binding(
                                         new Color(16733525),
@@ -99,9 +99,9 @@ public class YaclConfigScreenFactoryManager {
                                 .build()
                         )
                         .option(Option.<Color>createBuilder()
-                                .name(Text.literal("Unknown pronoun color"))
+                                .name(net.minecraft.network.chat.Component.literal("Unknown pronoun color"))
                                 .description(OptionDescription.of(
-                                        Text.literal("The color of the join message when a player's pronouns are not known."))
+                                        net.minecraft.network.chat.Component.literal("The color of the join message when a player's pronouns are not known."))
                                 )
                                 .binding(
                                         new Color(11184810),
@@ -120,7 +120,7 @@ public class YaclConfigScreenFactoryManager {
     public static YetAnotherConfigLib getModConfig() {
         return YetAnotherConfigLib.create(PronounsOnJoinConfig.HANDLER, (
             (defaults, config, builder) -> builder
-                .title(Text.literal("Settings"))
+                .title(Component.literal("Settings"))
                 .category(getMainSettings(config))
                 .category(getColorSettings(config))
                 .save(PronounsOnJoinConfig.HANDLER::save)

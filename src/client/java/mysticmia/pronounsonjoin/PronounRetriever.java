@@ -6,12 +6,12 @@ import com.google.gson.stream.JsonReader;
 import mysticmia.pronounsonjoin.config.PronounsOnJoinConfig;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.PlayerListEntry;
-import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.PlayerInfo;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +33,7 @@ public interface PronounRetriever
     Logger LOGGER = LoggerFactory.getLogger(modContainer.getMetadata().getName());
 
     // This array is a workaround to get static mutable variable in an interface. (cuz interface fields are always 'final')
-    Map<UUID, Text> playersPronounFetchQueued = new HashMap<>();
+    Map<UUID, Component> playersPronounFetchQueued = new HashMap<>();
     ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     AtomicReference<ScheduledFuture<?>> lastScheduledFuture = new AtomicReference<>(); // AI wrote this
 
@@ -45,7 +45,7 @@ public interface PronounRetriever
     static Style getThemeUnknownPronouns() { return intToStyle(config.themeUnknownPronouns.getRGB()); }
 
     private static void handleMultipleJoinEvents() {
-        Map<UUID, Text> playerPronounFetching = new HashMap<>(playersPronounFetchQueued);
+        Map<UUID, Component> playerPronounFetching = new HashMap<>(playersPronounFetchQueued);
         playersPronounFetchQueued.clear();
         ArrayList<String> playerUUIDs = new ArrayList<>();
         for (UUID uuid : playerPronounFetching.keySet()) {
@@ -53,28 +53,28 @@ public interface PronounRetriever
         }
         fetchPronouns(playerUUIDs.toArray(new String[0]))
                 .thenAccept(pronounResponse -> {
-                    MinecraftClient client = MinecraftClient.getInstance();
-                    for (Map.Entry<UUID, Text> entry : playerPronounFetching.entrySet()) {
+                    Minecraft client = Minecraft.getInstance();
+                    for (Map.Entry<UUID, Component> entry : playerPronounFetching.entrySet()) {
                         UUID playerID = entry.getKey();
                         String playerName = entry.getValue().getString();
                         ArrayList<String> pronouns = getUserPronouns(pronounResponse, playerID);
 
-                        MutableText pronounMessage = Text.literal(playerName); // colored later to make unknown players gray
+                        MutableComponent pronounMessage = Component.literal(playerName); // colored later to make unknown players gray
                         if (!pronouns.isEmpty()) {
                             pronounMessage.setStyle(getThemeReference());
                             String playerPronouns = String.join("/", pronouns);
                             String pronounString = playerPronouns + " (from PronounDB)";
                             setPronouns(playerID, pronounString); // store so it won't have to do the call in the future
-                            pronounMessage.append( Text.literal(" goes by: ").setStyle(getThemeText()) );
-                            pronounMessage.append( Text.literal(pronounString).setStyle(getThemeReference()) );
+                            pronounMessage.append( Component.literal(" goes by: ").setStyle(getThemeText()) );
+                            pronounMessage.append( Component.literal(pronounString).setStyle(getThemeReference()) );
                         } else {
                             pronounMessage.setStyle(getThemeUnknownPronouns());
-                            pronounMessage.append( Text.literal(" does not have any pronouns.").setStyle(getThemeUnknownPronouns()) );
+                            pronounMessage.append( Component.literal(" does not have any pronouns.").setStyle(getThemeUnknownPronouns()) );
                             setPronouns(playerID, "");
                             // "" (empty string) = no pronouns. Prevents future API calls
                         }
                         if (client.player != null) {
-                            client.execute(() -> client.player.sendMessage(pronounMessage, false));
+                            client.execute(() -> client.player.displayClientMessage(pronounMessage, false));
                         }
                     }
                 }).exceptionally(ex -> {
@@ -83,13 +83,13 @@ public interface PronounRetriever
                 });
     }
 
-    static void onUserJoinEvent(PlayerListS2CPacket.Entry receivedEntry, PlayerListEntry currentEntry) {
+    static void onUserJoinEvent(ClientboundPlayerInfoUpdatePacket.Entry receivedEntry, PlayerInfo currentEntry) {
         if (!config.showJoinMessages) {
             return;
         }
 
         UUID playerID = currentEntry.getProfile().id();
-        MutableText response = Text.literal(currentEntry.getProfile().name());
+        MutableComponent response = Component.literal(currentEntry.getProfile().name());
 
         // check if player already has pronoun overrides
         String pronounString = getPronouns(playerID);
@@ -97,16 +97,16 @@ public interface PronounRetriever
         if (pronounString != null) {
             if (pronounString.isEmpty()) { // act
                 response.setStyle(getThemeUnknownPronouns());
-                response.append( Text.literal(" does not have any pronouns.").setStyle(getThemeUnknownPronouns()) );
+                response.append( Component.literal(" does not have any pronouns.").setStyle(getThemeUnknownPronouns()) );
             } else {
                 response.setStyle(getThemeReference());
-                response.append( Text.literal(" goes by: ").setStyle(getThemeText()) );
-                response.append( Text.literal(pronounString).setStyle(getThemeReference()) );
+                response.append( Component.literal(" goes by: ").setStyle(getThemeText()) );
+                response.append( Component.literal(pronounString).setStyle(getThemeReference()) );
             }
 
-            MinecraftClient client = MinecraftClient.getInstance();
+            Minecraft client = Minecraft.getInstance();
             if (client.player != null) {
-                client.execute(() -> client.player.sendMessage(response, false));
+                client.execute(() -> client.player.displayClientMessage(response, false));
             }
             return;
         }
