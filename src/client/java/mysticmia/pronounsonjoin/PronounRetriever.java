@@ -74,7 +74,7 @@ public interface PronounRetriever
                             // "" (empty string) = no pronouns. Prevents future API calls
                         }
                         if (client.player != null) {
-                            client.execute(() -> client.player.displayClientMessage(pronounMessage, false));
+                            client.execute(() -> client.player.sendSystemMessage(pronounMessage));
                         }
                     }
                 }).exceptionally(ex -> {
@@ -106,7 +106,7 @@ public interface PronounRetriever
 
             Minecraft client = Minecraft.getInstance();
             if (client.player != null) {
-                client.execute(() -> client.player.displayClientMessage(response, false));
+                client.execute(() -> client.player.sendSystemMessage(response));
             }
             return;
         }
